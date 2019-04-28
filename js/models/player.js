@@ -6,8 +6,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
         scene.physics.world.enable(this);
         //  Player physics properties. Give the little guy a slight bounce.
-        player.setBounce(0.2);
-        player.setCollideWorldBounds(true);
+     /*   player.setBounce(0.2);
+        player.setCollideWorldBounds(true);*/
     }
 
 }

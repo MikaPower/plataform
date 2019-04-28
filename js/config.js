@@ -11,9 +11,5 @@ export default {
             debug: false
         }
     },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
+
 };
