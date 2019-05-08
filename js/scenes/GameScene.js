@@ -12,30 +12,45 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('ground', 'assets/platform.png');
         this.load.image('star', 'assets/star.png');
         this.load.image('bomb', 'assets/bomb.png');
+        this.load.image('bossground', 'assets/plataformboss.png');
         this.load.spritesheet('dude', 'assets/dude.png', {frameWidth: 32, frameHeight: 48});
     }
 
 
     create(time) {
         //  A simple background for our game
-        this.add.image(0, 0, 'sky').setOrigin(0.0);
+        this.add.image(0,0, 'sky').setOrigin(0.0);
 
         //  The platforms group contains the ground and the 2 ledges we can jump on
         this.platforms = this.physics.add.staticGroup();
 
         //  Here we create the ground.
         //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-        this.platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+       // this.add.image(0, 0, "background").setOrigin(0, 0);
+        this.platforms.create(400, 800, 'ground').setScale(2).refreshBody();
 
         //  Now let's create some ledges
-        this.platforms.create(600, 400, 'ground');
+        //BOSS
+        this.platforms.create(150, 150, 'bossground');
+        this.platforms.create(300, 150, 'bossground');
+        //
+
+        this.platforms.create(250, 400, 'ground');
+        this.platforms.create(400, 400, 'bossground');
+
+
+        this.platforms.create(800, 400, 'ground');
+
+
+        this.platforms.create(250, 600, 'ground');
+        this.platforms.create(800, 600, 'ground');
         this.platforms.create(50, 250, 'ground');
-        this.platforms.create(750, 220, 'ground');
+        this.platforms.create(600, 250, 'ground');
 
         // The player and its settings
         // player = this.physics.add.sprite(100, 450, 'dude');
 
-        this.player = new Player(this, 100, 450, 'dude');
+        this.player = new Player(this, 200, 500, 'dude');
 
 
         //  Player physics properties. Give the little guy a slight bounce.
