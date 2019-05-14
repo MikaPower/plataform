@@ -18,15 +18,20 @@ export default class Boss extends Phaser.Physics.Arcade.Sprite {
 
 
 
+
     }
 
 
 
+
+
+
     fireBomb(){
-        var bomb = this.bombs.create(x, 16, 'bomb');
-        bomb.setBounce(1);
+        var bomb = this.bombs.create(this.x, 16, 'bomb');
+        bomb.setBounce(0.9);
         bomb.setCollideWorldBounds(true);
-        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+        bomb.setVelocity(Phaser.Math.Between(-200, 200), 50);
+        bomb.outOfBondsKill=true;
         bomb.allowGravity = false;
     }
 

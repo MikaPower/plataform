@@ -16,15 +16,18 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('bossground', 'assets/plataformboss.png');
         this.load.image('boss', 'assets/boss.png');
         this.load.spritesheet('dude', 'assets/dude.png', {frameWidth: 32, frameHeight: 48});
+        this.load.image('ladder43x69', 'assets/ladder43x100.png');
+
     }
 
 
     create(time) {
-
+        this.onLadder = false;
 
         this.compoGui();
         this.createPlataforms();
         this.createPlayer();
+        this.playerAnimations();
         this.createBoss();
 
 
@@ -45,48 +48,34 @@ export default class GameScene extends Phaser.Scene {
 
         });
 
-        this.bombs = this.physics.add.group();
+
+        this.ladders = this.physics.add.group();
+        //enable all bodies in this group for physics
+        this.ladders.enableBody = true;
+        //then add out sprite to the group
+        var ladder = this.ladders.create(635, 450, 'ladder43x69');
+        //make it sure this object doesn't move
+        ladder.body.immovable = true;
+        ladder.body.moves = false;
+
 
         //  The score
-        this.scoreText = this.add.text(16, 16, 'score: 0', {fontSize: '32px', fill: '#000'});
-
-
         this.addColisions();
-
-
-        this.gameOver = false;
-
-        this.score = 0;
-
-
-        addEvents(time)
+        this.addEvents(time)
 
     }
 
     update(time, delta) {
+console.log(this.player.y+" "+this.player.x);
+
+        this.player.onLadder = false;
+        this.player.body.gravity.y = 0;
+
         if (this.gameOver) {
             return;
         }
-
-        if (this.cursors.left.isDown) {
-            this.player.setVelocityX(-160);
-
-            this.player.anims.play('left', true);
-        }
-        else if (this.cursors.right.isDown) {
-            this.player.setVelocityX(160);
-
-            this.player.anims.play('right', true);
-        }
-        else {
-            this.player.setVelocityX(0);
-
-            this.player.anims.play('turn');
-        }
-
-        if (this.cursors.up.isDown && this.player.body.touching.down) {
-            this.player.setVelocityY(-330);
-        }
+        this.checkBombPosition();
+        this.player.update(this.cursors, this.anims,this.playerPlataform);
 
     }
 
@@ -94,14 +83,15 @@ export default class GameScene extends Phaser.Scene {
     addColisions() {
         //  Collide the player and the stars with the platforms
         this.physics.add.collider(this.boss, this.platforms);
-        this.physics.add.collider(this.player, this.platforms);
+        this. playerPlataform = this.physics.add.collider(this.player, this.platforms);
         this.physics.add.collider(this.stars, this.platforms);
-        this.physics.add.collider(this.bombs, this.platforms);
+        this.physics.add.collider(this.boss.bombs, this.platforms);
 
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
-
-        this.physics.add.collider(this.player, this.bombs, this.hitBomb, null, this);
+        this.physics.add.collider(this.player, this.boss.bombs, this.hitBomb, null, this);
+        //Player and ladder
+        this.physics.add.overlap(this.player, this.ladders, this.player.isOnLadder, null, this);
     }
 
     addEvents(time) {
@@ -113,7 +103,28 @@ export default class GameScene extends Phaser.Scene {
             callbackScope: this,
             repeat: 50
         });
+        this.timerPositionBomb = this.time.addEvent({
+            delay: 100,
+            callback: this.checkBombPosition(time),
+            callbackScope: this,
+            repeat: 50
+        });
 
+    }
+
+
+    checkBombPosition() {
+        //  A new batch of stars to collect
+        this.boss.bombs.children.iterate(function (child) {
+
+            var y = Math.round(child.y);
+
+            if (y === 793) {
+                child.destroy();
+            }
+
+
+        });
     }
 
 
@@ -171,7 +182,9 @@ export default class GameScene extends Phaser.Scene {
         //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
         // this.add.image(0, 0, "background").setOrigin(0, 0);
         this.platforms.create(400, 800, 'ground').setScale(2).refreshBody();
-        this.createPlataforms();
+        this.scoreText = this.add.text(16, 16, 'score: 0', {fontSize: '32px', fill: '#000'});
+        this.gameOver = false;
+        this.score = 0;
 
 
     }
@@ -242,4 +255,5 @@ export default class GameScene extends Phaser.Scene {
         this.platforms.create(600, 250, 'ground');
 
     }
+
 }
