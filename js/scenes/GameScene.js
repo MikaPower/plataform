@@ -19,11 +19,14 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('ladder43x69', 'assets/ladder43x100.png');
         this.load.image('portal51x42', 'assets/portal51x42');
 
+
+
     }
 
 
     create(time) {
         this.onLadder = false;
+        this.portalTicket=0;
 
         this.compoGui();
         this.createPlataforms();
@@ -42,6 +45,16 @@ export default class GameScene extends Phaser.Scene {
             setXY: {x: 12, y: 0, stepX: 70}
         });
 
+        var x=146;
+        for (var i = 0; i < 6; i++) {
+            this.stars.create(x,744,'star');
+            x+=70;
+        }
+
+
+
+
+
         this.stars.children.iterate(function (child) {
             //  Give each star a slightly different bounce
             child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
@@ -51,7 +64,6 @@ export default class GameScene extends Phaser.Scene {
 
         this.portals = this.physics.add.group();
 
-        var portal = this.portals.create(150, 540, 'portal51x42');
 
 
         this.ladders = this.physics.add.group();
@@ -71,14 +83,15 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-
-        console.log(this.player.x + " " + this.player.y);
+console.log(this.player.x,this.player.y);
         this.player.onLadder = false;
         this.player.body.gravity.y = 0;
+
 
         if (this.gameOver) {
             return;
         }
+        this.createPortal(time);
         this.checkBombPosition();
         this.player.update(this.cursors, this.anims, this.playerPlataform);
 
@@ -115,6 +128,12 @@ export default class GameScene extends Phaser.Scene {
         this.timerPositionBomb = this.time.addEvent({
             delay: 100,
             callback: this.checkBombPosition(time),
+            callbackScope: this,
+            repeat: 50
+        });
+        this.timerPortal = this.time.addEvent({
+            delay: 100,
+            callback: this.createPortal(time),
             callbackScope: this,
             repeat: 50
         });
@@ -267,19 +286,62 @@ export default class GameScene extends Phaser.Scene {
 
     portalCreateTeleport(player, portal51x42) {
 
+        if(this.portalCreated===0) {
+
+
+            var positions = [
+                [614, 744],
+                [649, 560],
+                [222, 459],
+                [360, 720],
+                [360, 122],
+                [754, 459],
+                [459, 195],
+                [360, 101.3]];
+
+
+            this.portals.children.iterate(function (child) {
+                //  Give each star a slightly different bounce
+                child.destroy();
+
+            });
+            var indexA = Math.round(Math.random() * (7));
+            console.log(positions[indexA][0], positions[indexA][1]);
+            this.listportal = this.portals.create(positions[indexA][0], positions[indexA][1], 'portal51x42');
+            player.x = positions[indexA][0] - 100;
+            player.y = positions[indexA][1];
+            this.portalCreated = 1;
+        }
+    }
+
+    createPortal(time) {
+
+
         var positions = [
-            [560, 775],
-            [360, 787],
+            [614,744],
+            [649,560],
+            [222, 459],
+            [360, 720],
             [360, 122],
-            [210, 770],
+            [754, 459],
             [459, 195],
-            [360, 101.3]];
+            [360, 120.3]];
 
 
-        var indexA = Math.round(Math.random() * (5));
+    if(time>this.portalTicket){
+        this.portalCreated=0;
+        this.portals.children.iterate(function (child) {
+            //  Give each star a slightly different bounce
+            child.destroy();
+
+        });
+        var indexA = Math.round(Math.random() * (7));
+
+        console.log(positions[indexA][0], positions[indexA][1]);
         var portal = this.portals.create(positions[indexA][0], positions[indexA][1], 'portal51x42');
-        console.log("X" + positions[indexA]);
-        player.x = positions[indexA][0]-100;
-        player.y = positions[indexA][1];
+        this.portalTicket= time+ Math.round(Math.random() * (15000-10000)+10000);
+    }
+
+
     }
 }
