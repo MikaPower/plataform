@@ -1,7 +1,7 @@
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y) {
         super(scene,x,y,'dude');
-
+        this.scene=scene;
         scene.add.existing(this);
         scene.physics.add.existing(this);
         scene.physics.world.enable(this);
@@ -11,17 +11,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         this.onLadder = false;
 
-
-
-
-
-
     }
-
-
-
-
-
 
 
     update(cursors,anims,playerPlataforms){
@@ -41,8 +31,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         else
         if (cursors.left.isDown) {
             this.setVelocityX(-160);
-
-           // anims.play('left', true);
+          //  this.scene.anims.play('left', true);
         }
         else if (cursors.right.isDown) {
             this.setVelocityX(160);

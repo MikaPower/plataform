@@ -17,6 +17,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('boss', 'assets/boss.png');
         this.load.spritesheet('dude', 'assets/dude.png', {frameWidth: 32, frameHeight: 48});
         this.load.image('ladder43x69', 'assets/ladder43x100.png');
+        this.load.image('portal51x42', 'assets/portal51x42');
 
     }
 
@@ -42,11 +43,15 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.stars.children.iterate(function (child) {
-
             //  Give each star a slightly different bounce
             child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
 
         });
+
+
+        this.portals = this.physics.add.group();
+
+        var portal = this.portals.create(150, 540, 'portal51x42');
 
 
         this.ladders = this.physics.add.group();
@@ -66,8 +71,8 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-console.log(this.player.y+" "+this.player.x);
 
+        console.log(this.player.x + " " + this.player.y);
         this.player.onLadder = false;
         this.player.body.gravity.y = 0;
 
@@ -75,7 +80,7 @@ console.log(this.player.y+" "+this.player.x);
             return;
         }
         this.checkBombPosition();
-        this.player.update(this.cursors, this.anims,this.playerPlataform);
+        this.player.update(this.cursors, this.anims, this.playerPlataform);
 
     }
 
@@ -83,13 +88,17 @@ console.log(this.player.y+" "+this.player.x);
     addColisions() {
         //  Collide the player and the stars with the platforms
         this.physics.add.collider(this.boss, this.platforms);
-        this. playerPlataform = this.physics.add.collider(this.player, this.platforms);
+        this.playerPlataform = this.physics.add.collider(this.player, this.platforms);
         this.physics.add.collider(this.stars, this.platforms);
+        this.physics.add.collider(this.portals, this.platforms);
         this.physics.add.collider(this.boss.bombs, this.platforms);
 
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
         this.physics.add.collider(this.player, this.boss.bombs, this.hitBomb, null, this);
+
+        //Player and Portal
+        this.physics.add.overlap(this.player, this.portals, this.portalCreateTeleport, null, this);
         //Player and ladder
         this.physics.add.overlap(this.player, this.ladders, this.player.isOnLadder, null, this);
     }
@@ -256,4 +265,21 @@ console.log(this.player.y+" "+this.player.x);
 
     }
 
+    portalCreateTeleport(player, portal51x42) {
+
+        var positions = [
+            [560, 775],
+            [360, 787],
+            [360, 122],
+            [210, 770],
+            [459, 195],
+            [360, 101.3]];
+
+
+        var indexA = Math.round(Math.random() * (5));
+        var portal = this.portals.create(positions[indexA][0], positions[indexA][1], 'portal51x42');
+        console.log("X" + positions[indexA]);
+        player.x = positions[indexA][0]-100;
+        player.y = positions[indexA][1];
+    }
 }
