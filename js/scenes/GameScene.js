@@ -18,93 +18,93 @@ export default class GameScene extends Phaser.Scene {
         this.load.spritesheet('dude', 'assets/dude.png', {frameWidth: 32, frameHeight: 48});
         this.load.image('ladder43x69', 'assets/ladder43x100.png');
         this.load.image('portal51x42', 'assets/portal51x42');
-
-
-
+        this.load.image('speed', 'assets/speed28x28.png');
+        this.load.image('heart', 'assets/heart24x22.png');
+        this.load.image('lava', 'assets/lava479x30.png');
+        this.load.image('terrain', 'assets/terrain400x32.png');
+        this.load.image('rock', 'assets/rock400x32.png');
+        this.load.image('rock450x32', 'assets/rock450x32.png');
+        this.load.image('deformat', 'assets/deformat400x32.png');
+        this.load.image('bossterrain', 'assets/bossterrain350x32.png');
+        this.load.image('bossterrain280', 'assets/bossterrain280x32.png');
+        this.load.image('bossterrain250', 'assets/bossterrain250x32.png');
+        this.load.image('bossterrain210', 'assets/bossterrain210x32.png');
+        this.load.image('terrainlast', 'assets/terrainlast400x32.png');
+        this.load.image('treasure', 'assets/treasure30x30.png');
     }
 
 
     create(time) {
         this.onLadder = false;
-        this.portalTicket=0;
+        this.portalTicket = 0;
+        this.heartTicket = 0;
+        this.starsNumbers = 0;
+        this.speedTicket = 0;
+        this.clock = 0;
 
         this.compoGui();
         this.createPlataforms();
+        this.createLava();
         this.createPlayer();
         this.playerAnimations();
         this.createBoss();
-
-
-        //  Input Events
-        this.cursors = this.input.keyboard.createCursorKeys();
-
-        //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
-        this.stars = this.physics.add.group({
-            key: 'star',
-            repeat: 11,
-            setXY: {x: 12, y: 0, stepX: 70}
-        });
-
-        var x=146;
-        for (var i = 0; i < 6; i++) {
-            this.stars.create(x,744,'star');
-            x+=70;
-        }
-
-
-
-
-
-        this.stars.children.iterate(function (child) {
-            //  Give each star a slightly different bounce
-            child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-
-        });
-
-
-        this.portals = this.physics.add.group();
-
-
-
-        this.ladders = this.physics.add.group();
-        //enable all bodies in this group for physics
-        this.ladders.enableBody = true;
-        //then add out sprite to the group
-        var ladder = this.ladders.create(635, 450, 'ladder43x69');
-        //make it sure this object doesn't move
-        ladder.body.immovable = true;
-        ladder.body.moves = false;
+        this.addInputs();
+        this.createGroups();
 
 
         //  The score
-        this.addColisions();
+        this.addColisions(time);
         this.addEvents(time)
 
     }
 
     update(time, delta) {
-console.log(this.player.x,this.player.y);
+        console.log(this.player.x, this.player.y);
         this.player.onLadder = false;
         this.player.body.gravity.y = 0;
 
 
-        if (this.gameOver) {
-            return;
+        if (this.player.life > 0) {
+            this.addEvents(time);
+            this.checkBombPosition();
+            this.player.update(this.cursors, this.anims, this.playerPlataform);
         }
-        this.createPortal(time);
-        this.checkBombPosition();
-        this.player.update(this.cursors, this.anims, this.playerPlataform);
+        else if (this.gameWon) {
+            this.winGame();
+            if (Phaser.Input.Keyboard.JustDown(this.spaceBar)) {
+                this.scene.restart();
+            }
+        }
+        else {
+            this.add.text(150, 200, "Game Over\nRestart?", {
+                font: "50px Cambria",
+                fill: "#000000"
+            });
+            this.stopEvents();
+            // this.gameSound.stop();
+            this.player.x = 275;
+            this.player.y = 200;
+            this.player.setGravityY(0);
+            if (Phaser.Input.Keyboard.JustDown(this.spaceBar)) {
+                this.scene.restart();
+            }
 
+
+        }
     }
 
 
-    addColisions() {
+    addColisions(time) {
         //  Collide the player and the stars with the platforms
         this.physics.add.collider(this.boss, this.platforms);
         this.playerPlataform = this.physics.add.collider(this.player, this.platforms);
         this.physics.add.collider(this.stars, this.platforms);
         this.physics.add.collider(this.portals, this.platforms);
+        this.physics.add.collider(this.immortals, this.platforms);
+        this.physics.add.collider(this.speedPowerUp, this.platforms);
         this.physics.add.collider(this.boss.bombs, this.platforms);
+        this.physics.add.collider(this.chests, this.platforms);
+
 
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
@@ -112,8 +112,20 @@ console.log(this.player.x,this.player.y);
 
         //Player and Portal
         this.physics.add.overlap(this.player, this.portals, this.portalCreateTeleport, null, this);
+
+        //Player and heart
+        this.physics.add.overlap(this.player, this.immortals, this.heartCollision, null, this);
+        //Player and speed
+        this.physics.add.overlap(this.player, this.speedPowerUp, this.speedCollision, null, this);
         //Player and ladder
         this.physics.add.overlap(this.player, this.ladders, this.player.isOnLadder, null, this);
+        //Player and Chest
+        this.physics.add.overlap(this.player, this.chests, this.playerChestCollision, null, this);
+        //Bombs and Lava
+        this.physics.add.collider(this.boss.bombs, this.lavaPlataform, GameScene.bombLavaCollision, null, this);
+
+        //Player and Lava
+        this.physics.add.collider(this.player, this.lavaPlataform, GameScene.playerLavaCollision, null, this);
     }
 
     addEvents(time) {
@@ -137,6 +149,65 @@ console.log(this.player.x,this.player.y);
             callbackScope: this,
             repeat: 50
         });
+
+        this.timerHeartz = this.time.addEvent({
+            delay: 100,
+            callback: this.createHeart(time),
+            callbackScope: this,
+            repeat: 50
+        });
+        this.timerSpeed = this.time.addEvent({
+            delay: 100,
+            callback: this.createSpeedUp(time),
+            callbackScope: this,
+            repeat: 50
+        });
+        this.timerCheckSpeed = this.time.addEvent({
+            delay: 100,
+            callback: this.player.checkSpeedTime(time),
+            callbackScope: this,
+            repeat: 50
+        });
+
+
+        /*    this.timerEnemyRedColor = this.time.addEvent({
+                delay: 100,
+                callback: this.boss.redCheck(time),
+                callbackScope: this,
+                repeat: -1
+            });*/
+        this.timerPlayerRedColor = this.time.addEvent({
+            delay: 100,
+            callback: this.player.redCheck(time),
+            callbackScope: this,
+            repeat: -1
+        });
+        this.timerCheckNoDamage = this.time.addEvent({
+            delay: 100,
+            callback: this.player.checkImmortalaty(time),
+            callbackScope: this,
+            repeat: -1
+        });
+
+        this.timerCheckChest = this.time.addEvent({
+            delay: 100,
+            callback: this.player.checkChest(time),
+            callbackScope: this,
+            repeat: -1
+        });
+
+
+    }
+
+    stopEvents() {
+        //this.timer.destroy();
+        this.timerCheckSpeed.destroy();
+        this.timerCheckNoDamage.destroy();
+        this.timerHeartz.destroy();
+        this.timerPlayerRedColor.destroy();
+        this.timerPortal.destroy();
+        this.timerPositionBomb.destroy();
+        this.timerSpeed.destroy();
 
     }
 
@@ -199,6 +270,14 @@ console.log(this.player.x,this.player.y);
         });
     }
 
+    addInputs() {
+        //  Input Events
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.spaceBar = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE
+        );
+    }
+
 
     compoGui() {
         //  A simple background for our game
@@ -206,13 +285,24 @@ console.log(this.player.x,this.player.y);
         //  The platforms group contains the ground and the 2 ledges we can jump on
         this.platforms = this.physics.add.staticGroup();
 
+        this.lavaPlataform = this.physics.add.staticGroup();
+
+
         //  Here we create the ground.
         //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
         // this.add.image(0, 0, "background").setOrigin(0, 0);
         this.platforms.create(400, 800, 'ground').setScale(2).refreshBody();
-        this.scoreText = this.add.text(16, 16, 'score: 0', {fontSize: '32px', fill: '#000'});
-        this.gameOver = false;
-        this.score = 0;
+        this.gameWon = false;
+
+
+        this.labelCoins = this.add.text(160, 20, "Coins: 0", {
+            font: "30px Cambria",
+            fill: "#000000"
+        });
+        this.labelLife = this.add.text(290, 20, "Health: 100", {
+            font: "30px Cambria",
+            fill: "#ffffff"
+        });
 
 
     }
@@ -222,73 +312,56 @@ console.log(this.player.x,this.player.y);
         star.disableBody(true, true);
 
         //  Add and update the score
-        this.score += 10;
-        this.scoreText.setText('Score: ' + this.score);
+        this.starsNumbers++;
+        this.starsNumbers = 30;
+        if (this.starsNumbers === 30) {
+            var chest = this.chests.create(541, 120, 'treasure');
+            //AFter starts collected
+            this.platforms.create(1220, 200, 'bossterrain210');
 
-        if (this.stars.countActive(true) === 0) {
-            //  A new batch of stars to collect
-            this.stars.children.iterate(function (child) {
-
-                child.enableBody(true, child.x, 0, true, true);
-
-            });
-
-            var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-
-            /* var bomb = this.bombs.create(x, 16, 'bomb');
-             bomb.setBounce(1);
-             bomb.setCollideWorldBounds(true);
-             bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
-             bomb.allowGravity = false;*/
-
+            //  var chest = this.chests.create(635, 450, 'treasure');
         }
-    }
 
-    hitBomb(player, bomb) {
-        this.physics.pause();
 
-        player.setTint(0xff0000);
-
-        player.anims.play('turn');
-
-        this.gameOver = true;
+        //var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+        this.labelCoins.setText("Coins: " + this.starsNumbers);
     }
 
 
     createPlataforms() {
         //  Now let's create some ledges
         //BOSS
-        this.platforms.create(150, 150, 'bossground');
-        this.platforms.create(300, 150, 'bossground');
+        this.platforms.create(150, 150, 'bossterrain210');
+        this.platforms.create(550, 150, 'bossterrain210');
+
+        //this.platforms.create(300, 150, 'bossground');
         //
 
-        this.platforms.create(250, 400, 'ground');
-        this.platforms.create(400, 400, 'bossground');
+        this.platforms.create(250, 400, 'rock450x32');
+        //     this.platforms.create(400, 400, 'bossground');
 
 
-        this.platforms.create(800, 400, 'ground');
+        this.platforms.create(800, 400, 'rock');
 
 
         this.platforms.create(200, 500, 'bossground');
         this.platforms.create(700, 500, 'bossground');
 
 
-        this.platforms.create(250, 600, 'ground');
-        this.platforms.create(800, 600, 'ground');
+        this.platforms.create(250, 600, 'terrain');
+        this.platforms.create(800, 600, 'deformat');
 
-        this.platforms.create(400, 700, 'ground');
-        this.platforms.create(900, 700, 'ground');
+        this.platforms.create(400, 700, 'terrain');
+        this.platforms.create(900, 700, 'terrain');
 
-        this.platforms.create(50, 250, 'ground');
-        this.platforms.create(600, 250, 'ground');
+        this.platforms.create(50, 250, 'terrainlast');
+        this.platforms.create(600, 250, 'terrainlast');
 
     }
 
     portalCreateTeleport(player, portal51x42) {
 
-        if(this.portalCreated===0) {
-
-
+        if (this.portalCreated === 0) {
             var positions = [
                 [614, 744],
                 [649, 560],
@@ -306,7 +379,7 @@ console.log(this.player.x,this.player.y);
 
             });
             var indexA = Math.round(Math.random() * (7));
-            console.log(positions[indexA][0], positions[indexA][1]);
+            //  console.log(positions[indexA][0], positions[indexA][1]);
             this.listportal = this.portals.create(positions[indexA][0], positions[indexA][1], 'portal51x42');
             player.x = positions[indexA][0] - 100;
             player.y = positions[indexA][1];
@@ -318,8 +391,8 @@ console.log(this.player.x,this.player.y);
 
 
         var positions = [
-            [614,744],
-            [649,560],
+            [614, 744],
+            [649, 560],
             [222, 459],
             [360, 720],
             [360, 122],
@@ -328,19 +401,165 @@ console.log(this.player.x,this.player.y);
             [360, 120.3]];
 
 
-    if(time>this.portalTicket){
-        this.portalCreated=0;
-        this.portals.children.iterate(function (child) {
+        if (time > this.portalTicket) {
+            this.portalCreated = 0;
+            this.portals.children.iterate(function (child) {
+
+                child.destroy();
+
+            });
+            var indexA = Math.round(Math.random() * (7));
+
+            //  console.log(positions[indexA][0], positions[indexA][1]);
+            var portal = this.portals.create(positions[indexA][0], positions[indexA][1], 'portal51x42');
+            this.portalTicket = time + Math.round(Math.random() * (15000 - 10000) + 10000);
+        }
+
+    }
+
+    createGroups() {
+        //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
+        this.stars = this.physics.add.group({
+            key: 'star',
+            repeat: 11,
+            setXY: {x: 200, y: 0, stepX: 70}
+        });
+
+        var x = 146;
+        for (var i = 0; i < 6; i++) {
+            this.stars.create(x, 744, 'star');
+            x += 70;
+        }
+        x = 80;
+        for (var i = 0; i < 6; i++) {
+            this.stars.create(x, 550, 'star');
+            x += 70;
+        }
+        x = 719;
+        for (var i = 0; i < 6; i++) {
+            this.stars.create(x, 440, 'star');
+            x += 70;
+        }
+
+
+        this.stars.children.iterate(function (child) {
             //  Give each star a slightly different bounce
-            child.destroy();
+            child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
 
         });
-        var indexA = Math.round(Math.random() * (7));
 
-        console.log(positions[indexA][0], positions[indexA][1]);
-        var portal = this.portals.create(positions[indexA][0], positions[indexA][1], 'portal51x42');
-        this.portalTicket= time+ Math.round(Math.random() * (15000-10000)+10000);
+        //Portals
+        this.portals = this.physics.add.group();
+
+
+        //Ladders
+        this.ladders = this.physics.add.group();
+        //enable all bodies in this group for physics
+        this.ladders.enableBody = true;
+        //then add out sprite to the group
+        var ladder = this.ladders.create(635, 450, 'ladder43x69');
+        //make it sure this object doesn't move
+        ladder.body.immovable = true;
+        ladder.body.moves = false;
+
+
+        //Immortal
+
+        this.immortals = this.physics.add.group();
+        this.speedPowerUp = this.physics.add.group();
+        this.chests = this.physics.add.group();
+
     }
+
+    createHeart(time) {
+
+        if (time > this.heartTicket) {
+
+            this.immortals.children.iterate(function (child) {
+                //  Give each star a slightly different bounce
+                child.destroy();
+            });
+
+
+            var positions = [[706, 560], [60, 760], [318, 660], [153, 459], [127, 210], [766, 212]];
+            var indexA = Math.round(Math.random() * (5));
+
+            var heart = this.immortals.create(positions[indexA][0], positions[indexA][1], 'heart');
+            this.heartTicket = time + 14000;
+        }
+    }
+
+    createSpeedUp(time) {
+
+        if (time > this.speedTicket) {
+            this.speedPowerUp.children.iterate(function (child) {
+                //  Give each star a slightly different bounce
+                child.destroy();
+            });
+
+
+            var positions = [[604, 210], [460, 359], [590, 660]];
+            var indexA = Math.round(Math.random() * (2));
+
+            var speed = this.speedPowerUp.create(positions[indexA][0], positions[indexA][1], 'speed');
+            this.speedTicket = time + 20000;
+        }
+    }
+
+
+    heartCollision(player, immortalls) {
+        this.player.noDamage = 1;
+        this.player.damageTicket = this.time.now;
+        immortalls.destroy();
+        this.player.setTint(0x00ff00);
+    }
+
+
+    speedCollision(player, speedPowerUp) {
+        this.player.fastSpeed = 1;
+        this.player.fastSpeedTicket = this.time.now;
+        speedPowerUp.destroy();
+    }
+
+    createLava() {
+        this.lavaPlataform.create(1040, 785, 'lava');
+    }
+
+    static playerLavaCollision(player, lavaPlataform) {
+        player.life = 0;
+        player.setTint(0xff0000);
+
+
+    }
+
+    static bombLavaCollision(bomb, lavaPlataform) {
+        bomb.destroy();
+
+    }
+
+    hitBomb(player, bomb) {
+
+
+        if (player.noDamage === 0) {
+            this.player.life -= 20;
+            this.labelLife.setText("Health: " + this.player.life);
+            // this.physics.pause();
+            this.player.setTint(0xff0000);
+            player.anims.play('turn');
+            this.player.red = 1;
+            this.player.redTicket = this.time.now;
+            bomb.destroy();
+            // this.gameOver = true;
+        }
+        player.anims.play('left');
+        bomb.destroy();
+    }
+
+
+    playerChestCollision(player, chests) {
+        chests.destroy();
+
+
 
 
     }
