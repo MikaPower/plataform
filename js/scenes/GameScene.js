@@ -31,6 +31,9 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('bossterrain210', 'assets/bossterrain210x32.png');
         this.load.image('terrainlast', 'assets/terrainlast400x32.png');
         this.load.image('treasure', 'assets/treasure30x30.png');
+        this.load.image('door', 'assets/door30x30.png');
+        this.load.image('key','assets/key50x30.png');
+
     }
 
 
@@ -59,21 +62,21 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        console.log(this.player.x, this.player.y);
+       // console.log(this.player.x, this.player.y);
         this.player.onLadder = false;
         this.player.body.gravity.y = 0;
 
-
+console.log(this.gameWon);
         if (this.player.life > 0) {
+            if (this.gameWon) {
+                this.winGame();
+                if (Phaser.Input.Keyboard.JustDown(this.spaceBar)) {
+                    this.scene.restart();
+                }
+            }
             this.addEvents(time);
             this.checkBombPosition();
-            this.player.update(this.cursors, this.anims, this.playerPlataform);
-        }
-        else if (this.gameWon) {
-            this.winGame();
-            if (Phaser.Input.Keyboard.JustDown(this.spaceBar)) {
-                this.scene.restart();
-            }
+            this.player.update(this.cursors, this.playerPlataform);
         }
         else {
             this.add.text(150, 200, "Game Over\nRestart?", {
@@ -104,8 +107,8 @@ export default class GameScene extends Phaser.Scene {
         this.physics.add.collider(this.speedPowerUp, this.platforms);
         this.physics.add.collider(this.boss.bombs, this.platforms);
         this.physics.add.collider(this.chests, this.platforms);
-
-
+        this.physics.add.collider(this.doors, this.platforms);
+        this.physics.add.collider(this.keys, this.platforms);
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
         this.physics.add.collider(this.player, this.boss.bombs, this.hitBomb, null, this);
@@ -121,6 +124,10 @@ export default class GameScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.ladders, this.player.isOnLadder, null, this);
         //Player and Chest
         this.physics.add.overlap(this.player, this.chests, this.playerChestCollision, null, this);
+        //Player and Door
+        this.physics.add.overlap(this.player, this.doors, this.PlayerDoorCollision, null, this);
+        //Player and Key
+        this.physics.add.overlap(this.player, this.keys, this.playerKeyCollision, null, this);
         //Bombs and Lava
         this.physics.add.collider(this.boss.bombs, this.lavaPlataform, GameScene.bombLavaCollision, null, this);
 
@@ -189,18 +196,14 @@ export default class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.timerCheckChest = this.time.addEvent({
-            delay: 100,
-            callback: this.player.checkChest(time),
-            callbackScope: this,
-            repeat: -1
-        });
+
 
 
     }
 
     stopEvents() {
-        //this.timer.destroy();
+
+        this.timerFire.destroy();
         this.timerCheckSpeed.destroy();
         this.timerCheckNoDamage.destroy();
         this.timerHeartz.destroy();
@@ -230,7 +233,7 @@ export default class GameScene extends Phaser.Scene {
     createPlayer() {
         // The player and its settings
         // player = this.physics.add.sprite(100, 450, 'dude');
-        this.player = new Player(this, 200, 500, 'dude');
+        this.player = new Player(this, 100, 700, 'dude');
 
         //  Player physics properties. Give the little guy a slight bounce.
         this.player.setBounce(0.2);
@@ -313,13 +316,10 @@ export default class GameScene extends Phaser.Scene {
 
         //  Add and update the score
         this.starsNumbers++;
-        this.starsNumbers = 30;
+        this.starsNumbers=30;
         if (this.starsNumbers === 30) {
             var chest = this.chests.create(541, 120, 'treasure');
-            //AFter starts collected
-            this.platforms.create(1220, 200, 'bossterrain210');
-
-            //  var chest = this.chests.create(635, 450, 'treasure');
+            this.keys.create(758,734,'key');
         }
 
 
@@ -339,9 +339,7 @@ export default class GameScene extends Phaser.Scene {
 
         this.platforms.create(250, 400, 'rock450x32');
         //     this.platforms.create(400, 400, 'bossground');
-
-
-        this.platforms.create(800, 400, 'rock');
+        this.platforms.create(850, 400, 'rock');
 
 
         this.platforms.create(200, 500, 'bossground');
@@ -451,13 +449,14 @@ export default class GameScene extends Phaser.Scene {
         //Portals
         this.portals = this.physics.add.group();
 
-
+        //Doors
+        this.doors = this.physics.add.group();
         //Ladders
         this.ladders = this.physics.add.group();
         //enable all bodies in this group for physics
         this.ladders.enableBody = true;
         //then add out sprite to the group
-        var ladder = this.ladders.create(635, 450, 'ladder43x69');
+        var ladder = this.ladders.create(635, 438, 'ladder43x69');
         //make it sure this object doesn't move
         ladder.body.immovable = true;
         ladder.body.moves = false;
@@ -468,6 +467,7 @@ export default class GameScene extends Phaser.Scene {
         this.immortals = this.physics.add.group();
         this.speedPowerUp = this.physics.add.group();
         this.chests = this.physics.add.group();
+        this.keys = this.physics.add.group();
 
     }
 
@@ -551,16 +551,49 @@ export default class GameScene extends Phaser.Scene {
             bomb.destroy();
             // this.gameOver = true;
         }
+        console.log(player.anims);
         player.anims.play('left');
+
         bomb.destroy();
     }
 
 
     playerChestCollision(player, chests) {
-        chests.destroy();
 
 
+        console.log(this.player.key);
+        if(this.player.key===true) {
+            chests.destroy();
+            //AFter starts collected
+            this.platforms.create(1220, 200, 'bossterrain210');
+            this.createDoor();
+        }
+    }
+
+    createDoor() {
+        this.doors.create(1212, 165, 'door');
+    }
+
+    PlayerDoorCollision() {
+        this.gameWon = true;
+    }
+
+    playerKeyCollision(player, keys) {
+        this.player.key = true;
+        keys.destroy();
+    }
 
 
+    // Text to display if won
+    winGame() {
+        this.add.text(150, 200, "Game Won\nCongratulations!!!!", {
+            font: "50px Cambria",
+            fill: "#ffeb10"
+        });
+        this.stopEvents();
+        this.physics.pause();
+        this.player.x = 275;
+        this.player.y = 200;
+        this.player.setGravityY(0);
     }
 }

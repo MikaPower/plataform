@@ -22,15 +22,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.fastSpeed = 0;
         this.fastSpeedTicket = 0;
 
-
+        //Key to chest
+    this.key=false;
     }
 
 
-    update(cursors, anims, playerPlataforms) {
+    update(cursors, playerPlataforms) {
         if (this.onLadder) {
             this.physics.world.removeCollider(playerPlataforms);
             if (cursors.up.isDown) {
-                this.velocity.y = -this.speed / 2;
+                this.setVelocityX(10);
             }
             if (cursors.down.isDown) {
                 this.velocity.y = this.speed / 2;
@@ -46,23 +47,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityX(-350);
                 return;
             }
+           // console.log(this.scene.anims.anims);
                 this.setVelocityX(-160);
-            //  this.scene.anims.play('left', true);
+              this.anims.play('left');
         }
         else if (cursors.right.isDown) {
             if (this.fastSpeed === 1) {
-                this.setVelocityX(250);
+                this.setVelocityX(350);
                 return;
             }
             this.setVelocityX(160);
 
-            //  anims.play('right', true);
+             this.anims.play('right', true);
         }
         else {
 
             this.setVelocityX(0);
 
-            //   anims.play('turn');
+            this.anims.play('turn');
         }
 
         if (cursors.up.isDown && this.body.touching.down) {
@@ -74,7 +76,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     isOnLadder() {
         this.onLadder = true;
-        console.log(this.onLadder);
+        //console.log(this.onLadder);
     }
 
 
@@ -108,7 +110,4 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
 
-    checkChest(time) {
-
-    }
 }
