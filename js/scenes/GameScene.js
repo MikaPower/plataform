@@ -33,6 +33,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('treasure', 'assets/treasure30x30.png');
         this.load.image('door', 'assets/door30x30.png');
         this.load.image('key','assets/key50x30.png');
+        this.load.audio("Theme", "assets/musicGameScene.mp3");
 
     }
 
@@ -57,16 +58,18 @@ export default class GameScene extends Phaser.Scene {
 
         //  The score
         this.addColisions(time);
-        this.addEvents(time)
+        this.addEvents(time);
+        this.titleSound = this.sound.add('Theme');
+        this.titleSound.play();
 
     }
 
     update(time, delta) {
-       // console.log(this.player.x, this.player.y);
+        console.log(this.player.x, this.player.y);
         this.player.onLadder = false;
         this.player.body.gravity.y = 0;
 
-console.log(this.gameWon);
+//console.log(this.gameWon);
         if (this.player.life > 0) {
             if (this.gameWon) {
                 this.winGame();
@@ -75,7 +78,6 @@ console.log(this.gameWon);
                 }
             }
             this.addEvents(time);
-            this.checkBombPosition();
             this.player.update(this.cursors, this.playerPlataform);
         }
         else {
@@ -88,6 +90,7 @@ console.log(this.gameWon);
             this.player.x = 275;
             this.player.y = 200;
             this.player.setGravityY(0);
+            this.titleSound.stop();
             if (Phaser.Input.Keyboard.JustDown(this.spaceBar)) {
                 this.scene.restart();
             }
@@ -141,12 +144,6 @@ console.log(this.gameWon);
         this.timerFire = this.time.addEvent({
             delay: 100,
             callback: this.boss.fireBomb(time),
-            callbackScope: this,
-            repeat: 50
-        });
-        this.timerPositionBomb = this.time.addEvent({
-            delay: 100,
-            callback: this.checkBombPosition(time),
             callbackScope: this,
             repeat: 50
         });
@@ -209,25 +206,12 @@ console.log(this.gameWon);
         this.timerHeartz.destroy();
         this.timerPlayerRedColor.destroy();
         this.timerPortal.destroy();
-        this.timerPositionBomb.destroy();
         this.timerSpeed.destroy();
 
     }
 
 
-    checkBombPosition() {
-        //  A new batch of stars to collect
-        this.boss.bombs.children.iterate(function (child) {
 
-            var y = Math.round(child.y);
-
-            if (y === 793) {
-                child.destroy();
-            }
-
-
-        });
-    }
 
 
     createPlayer() {
@@ -316,15 +300,14 @@ console.log(this.gameWon);
 
         //  Add and update the score
         this.starsNumbers++;
-        this.starsNumbers=30;
-        if (this.starsNumbers === 30) {
+        if (this.starsNumbers === 32) {
             var chest = this.chests.create(541, 120, 'treasure');
             this.keys.create(758,734,'key');
         }
 
 
         //var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-        this.labelCoins.setText("Coins: " + this.starsNumbers);
+        this.labelCoins.setText("Stars: " + this.starsNumbers);
     }
 
 
@@ -438,6 +421,15 @@ console.log(this.gameWon);
             this.stars.create(x, 440, 'star');
             x += 70;
         }
+     var dumpStar=   this.stars.create(1266, 481, 'star');
+        dumpStar.body.immovable=true;
+        dumpStar.body.moves=false;
+
+
+        var dumpStarv2=   this.stars.create(1266, 200, 'star');
+        dumpStarv2.body.immovable=true;
+        dumpStarv2.body.moves=false;
+
 
 
         this.stars.children.iterate(function (child) {
