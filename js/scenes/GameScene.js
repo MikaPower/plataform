@@ -65,7 +65,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        console.log(this.player.x, this.player.y);
+      //  console.log(this.player.x, this.player.y);
         this.player.onLadder = false;
         this.player.body.gravity.y = 0;
 
@@ -282,7 +282,7 @@ export default class GameScene extends Phaser.Scene {
         this.gameWon = false;
 
 
-        this.labelCoins = this.add.text(160, 20, "Coins: 0", {
+        this.LabelStars = this.add.text(160, 20, "Stars: 0", {
             font: "30px Cambria",
             fill: "#000000"
         });
@@ -307,7 +307,7 @@ export default class GameScene extends Phaser.Scene {
 
 
         //var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-        this.labelCoins.setText("Stars: " + this.starsNumbers);
+        this.LabelStars.setText("Stars: " + this.starsNumbers);
     }
 
 
