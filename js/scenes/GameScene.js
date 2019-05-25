@@ -13,9 +13,10 @@ export default class GameScene extends Phaser.Scene {
         this.load.image('ground', 'assets/platform.png');
         this.load.image('star', 'assets/star.png');
         this.load.image('bomb', 'assets/bomb.png');
+        this.load.image('pokeball', 'assets/Pokeball.png');
         this.load.image('bossground', 'assets/plataformboss.png');
-        this.load.image('boss', 'assets/boss.png');
-        this.load.spritesheet('dude', 'assets/dude.png', {frameWidth: 32, frameHeight: 48});
+        this.load.spritesheet('boss', 'assets/bossAni.png');
+        this.load.spritesheet('dude', 'assets/testv2.png', {frameWidth: 32, frameHeight:48 });
         this.load.image('ladder43x69', 'assets/ladder43x100.png');
         this.load.image('portal51x42', 'assets/portal51x42');
         this.load.image('speed', 'assets/speed28x28.png');
@@ -51,6 +52,7 @@ export default class GameScene extends Phaser.Scene {
         this.createLava();
         this.createPlayer();
         this.playerAnimations();
+        this.bossAnimations();
         this.createBoss();
         this.addInputs();
         this.createGroups();
@@ -68,6 +70,7 @@ export default class GameScene extends Phaser.Scene {
       //  console.log(this.player.x, this.player.y);
         this.player.onLadder = false;
         this.player.body.gravity.y = 0;
+console.log(this.boss.hasShot);
 
 //console.log(this.gameWon);
         if (this.player.life > 0) {
@@ -115,6 +118,7 @@ export default class GameScene extends Phaser.Scene {
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
         this.physics.add.overlap(this.player, this.stars, this.collectStar, null, this);
         this.physics.add.collider(this.player, this.boss.bombs, this.hitBomb, null, this);
+        this.physics.add.overlap(this.player, this.boss.bombsSpecial, this.hitBombSpecial, null, this);
 
         //Player and Portal
         this.physics.add.overlap(this.player, this.portals, this.portalCreateTeleport, null, this);
@@ -144,6 +148,12 @@ export default class GameScene extends Phaser.Scene {
         this.timerFire = this.time.addEvent({
             delay: 100,
             callback: this.boss.fireBomb(time),
+            callbackScope: this,
+            repeat: 50
+        });
+        this.timerFireSpecial = this.time.addEvent({
+            delay: 100,
+            callback: this.boss.fireSpecial(time),
             callbackScope: this,
             repeat: 50
         });
@@ -192,6 +202,18 @@ export default class GameScene extends Phaser.Scene {
             callbackScope: this,
             repeat: -1
         });
+        this.timerCheckFrozen = this.time.addEvent({
+            delay: 100,
+            callback: this.player.checkFrozen(time),
+            callbackScope: this,
+            repeat: -1
+        });
+        this.timerHasShot = this.time.addEvent({
+            delay: 100,
+            callback: this.boss.checkShot(time),
+            callbackScope: this,
+            repeat: 50
+        });
 
 
 
@@ -207,6 +229,8 @@ export default class GameScene extends Phaser.Scene {
         this.timerPlayerRedColor.destroy();
         this.timerPortal.destroy();
         this.timerSpeed.destroy();
+        this.timerFireSpecial.destroy();
+        this.timerCheckFrozen.destroy();
 
     }
 
@@ -238,8 +262,8 @@ export default class GameScene extends Phaser.Scene {
         //  Our player animations, turning, walking left and walking right.
         this.anims.create({
             key: 'left',
-            frames: this.anims.generateFrameNumbers('dude', {start: 0, end: 3}),
-            frameRate: 10,
+            frames: this.anims.generateFrameNumbers('dude', {start: 2, end: 3}),
+            frameRate: 20,
             repeat: -1
         });
 
@@ -251,7 +275,7 @@ export default class GameScene extends Phaser.Scene {
 
         this.anims.create({
             key: 'right',
-            frames: this.anims.generateFrameNumbers('dude', {start: 5, end: 8}),
+            frames: this.anims.generateFrameNumbers('dude', {start: 1, end: 2}),
             frameRate: 10,
             repeat: -1
         });
@@ -263,6 +287,29 @@ export default class GameScene extends Phaser.Scene {
         this.spaceBar = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.SPACE
         );
+    }
+
+
+
+    bossAnimations() {
+        //  Our player animations, turning, walking left and walking right.
+        this.anims.create({
+            key: 'bossBomb',
+            frames: this.anims.generateFrameNumbers('boss', {start: 0, end: 2}),
+            frameRate: 20,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'bossStop',
+            frames: [{key: 'boss', frame: 2}],
+        });
+        this.anims.create({
+            key: 'bossSpecial',
+            frames: this.anims.generateFrameNumbers('boss', {start: 2, end: 3}),
+            frameRate: 20,
+            repeat: -1
+        });
+
     }
 
 
@@ -553,7 +600,7 @@ export default class GameScene extends Phaser.Scene {
     playerChestCollision(player, chests) {
 
 
-        console.log(this.player.key);
+     //   console.log(this.player.key);
         if(this.player.key===true) {
             chests.destroy();
             //AFter starts collected
@@ -587,5 +634,25 @@ export default class GameScene extends Phaser.Scene {
         this.player.x = 275;
         this.player.y = 200;
         this.player.setGravityY(0);
+    }
+
+    hitBombSpecial(player,bomb) {
+        if (player.noDamage === 0) {
+            this.player.life -= 25;
+            this.labelLife.setText("Health: " + this.player.life);
+            this.player.frozen=1;
+            // this.physics.pause();
+            this.player.clearTint();
+            this.player.setTint(0x3399ff);
+            player.anims.play('turn');
+            this.player.red = 1;
+            this.player.frozenTicket = this.time.now;
+            this.player.redTicket=this.time.now;
+            bomb.destroy();
+            return;
+            // this.gameOver = true;
+        }
+        player.anims.play('left');
+        bomb.destroy();
     }
 }

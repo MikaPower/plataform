@@ -22,55 +22,67 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.fastSpeed = 0;
         this.fastSpeedTicket = 0;
 
+        //frozen
+        this.frozen = 0;
+        this.frozenTicket = 0;
         //Key to chest
     this.key=false;
     }
 
 
     update(cursors, playerPlataforms) {
-        if (this.onLadder) {
-            this.physics.world.removeCollider(playerPlataforms);
-            if (cursors.up.isDown) {
-                this.setVelocityX(10);
-            }
-            if (cursors.down.isDown) {
-                this.velocity.y = this.speed / 2;
-            }
-            if ((!cursors.up.isDown && !cursors.down.isDown)) {
-                this.gravity.y = 0;
-                this.velocity.y = 0;
-            }
-        }
-        else if (cursors.left.isDown) {
-           // console.log(this.fastSpeed);
-            if (this.fastSpeed === 1) {
-                this.setVelocityX(-350);
-                return;
-            }
-           // console.log(this.scene.anims.anims);
-                this.setVelocityX(-160);
-              this.anims.play('left');
-        }
-        else if (cursors.right.isDown) {
-            if (this.fastSpeed === 1) {
-                this.setVelocityX(350);
-                return;
-            }
-            this.setVelocityX(160);
 
-             this.anims.play('right', true);
+        if(this.frozen===1){
+            this.setVelocityX(0);
+            this.setVelocityY(0);
         }
         else {
+            if (this.onLadder) {
+                this.physics.world.removeCollider(playerPlataforms);
+                if (cursors.up.isDown) {
+                    this.setVelocityX(10);
+                }
+                if (cursors.down.isDown) {
+                    this.velocity.y = this.speed / 2;
+                }
+                if ((!cursors.up.isDown && !cursors.down.isDown)) {
+                    this.gravity.y = 0;
+                    this.velocity.y = 0;
+                }
+            }
+            else if (cursors.left.isDown) {
+                // console.log(this.fastSpeed);
+                if (this.fastSpeed === 1) {
+                    this.setVelocityX(-350);
+                    return;
+                }
+                // console.log(this.scene.anims.anims);
+                this.setVelocityX(-160);
+                this.anims.play('left');
+            }
+            else if (cursors.right.isDown) {
+                if (this.fastSpeed === 1) {
+                    this.setVelocityX(350);
+                    return;
+                }
+                this.setVelocityX(160);
 
-            this.setVelocityX(0);
+                this.anims.play('right', true);
+            }
+            else {
 
-            this.anims.play('turn');
+                this.setVelocityX(0);
+
+                this.anims.play('turn');
+            }
+
+            if (cursors.up.isDown && this.body.touching.down) {
+                this.setVelocityY(-330);
+            }
+            if (cursors.down.isDown && !this.body.touching.down) {
+                this.setVelocityY(120);
+            }
         }
-
-        if (cursors.up.isDown && this.body.touching.down) {
-            this.setVelocityY(-330);
-        }
-
     }
 
 
@@ -105,6 +117,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.fastSpeed === 1) {
             if (time - this.fastSpeedTicket > 4000) {
                 this.fastSpeed = 0;
+            }
+        }
+    }
+
+    checkFrozen(time) {
+        if (this.frozen === 1) {
+            if (time - this.frozenTicket > 1500) {
+                console.log("entrei");
+                this.frozen = 0;
             }
         }
     }

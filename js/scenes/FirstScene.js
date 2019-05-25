@@ -13,7 +13,7 @@ export default class FirstScene extends Phaser.Scene {
         this.load.image('star', 'assets/star.png');
         this.load.image('bomb', 'assets/bomb.png');
         this.load.image('bossground', 'assets/plataformboss.png');
-        this.load.image('boss', 'assets/boss.png');
+        this.load.spritesheet('boss', 'assets/bossAni.png',{frameWidth: 30, frameHeight: 30});
         this.load.spritesheet('dude', 'assets/dude.png', {frameWidth: 32, frameHeight: 48});
         this.load.image('ladder43x69', 'assets/ladder43x100.png');
         this.load.image('portal51x42', 'assets/portal51x42');
