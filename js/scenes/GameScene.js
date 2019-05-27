@@ -630,6 +630,7 @@ console.log(this.boss.hasShot);
             fill: "#ffeb10"
         });
         this.stopEvents();
+        this.titleSound.stop();
         this.physics.pause();
         this.player.x = 275;
         this.player.y = 200;
